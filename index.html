@@ -3,126 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>F5 Pro Master 2.2</title>
+    <title>F5 Pro Master 2.5</title>
     <style>
         :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #0a0a0a; }
-        body { font-family: sans-serif; background: var(--bg); color: white; padding: 15px; margin: 0; }
-        .card { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; max-width: 450px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .stat-box { background: #1a1a1a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #333; }
-        .btn-gen { background: var(--neon); color: black; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
-        input, select { background: #1a1a1a; border: 1px solid #333; color: white; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 16px; }
-        .ticket { background: #161616; padding: 18px; border-radius: 15px; margin-top: 10px; border-left: 5px solid #333; position: relative; }
+        body { font-family: sans-serif; background: var(--bg); color: white; padding: 10px; margin: 0; }
+        .card { background: #111; padding: 15px; border-radius: 15px; border: 1px solid #222; max-width: 500px; margin: auto; }
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 10px; text-align: center; background: #222; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .tab.active { background: var(--neon); color: black; font-weight: bold; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat-box { background: #1a1a1a; padding: 10px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+        
+        input, select, textarea { background: #1a1a1a; border: 1px solid #333; color: white; padding: 12px; border-radius: 10px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 15px; }
+        button { background: var(--neon); color: black; border: none; padding: 15px; border-radius: 12px; font-weight: 900; width: 100%; cursor: pointer; }
+        
+        .ticket { background: #161616; padding: 15px; border-radius: 12px; margin-top: 10px; border-left: 5px solid #444; position: relative; }
         .match-win { border-left-color: var(--neon); background: #001a14; }
-        .match-num { color: var(--neon); font-weight: 900; text-decoration: underline; }
-        .strat-label { font-size: 10px; font-weight: bold; color: black; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
-        .log-btn { background: var(--gold); border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
+        .match-num { color: var(--neon); font-weight: bold; text-decoration: underline; }
+        .history-item { font-size: 12px; color: #888; border-bottom: 1px solid #222; padding: 5px 0; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <div class="stats-grid">
-        <div class="stat-box"><small style="color:#666">SPENT</small><br><b id="spentDisp" style="font-size:22px">$0</b></div>
-        <div class="stat-box"><small style="color:#666">WON</small><br><b id="wonDisp" style="font-size:22px; color:var(--gold)">$0</b></div>
+    <div class="tab-bar">
+        <div class="tab active" onclick="showTab('play')">PLAY</div>
+        <div class="tab" onclick="showTab('history')">HISTORY (200)</div>
+        <div class="tab" onclick="showTab('vault')">VAULT</div>
     </div>
 
-    <button class="btn-gen" onclick="generate()"> GENERATE BARBELL PICKS</button>
-    <div id="preview"></div>
+    <div id="playTab">
+        <div class="stats-grid">
+            <div class="stat-box"><small>SPENT</small><br><b id="spentDisp">$0</b></div>
+            <div class="stat-box"><small>WON</small><br><b id="wonDisp" style="color:var(--gold)">$0</b></div>
+        </div>
 
-    <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
+        <label style="font-size:12px; color:var(--neon)">Consecutive Draws (1-10):</label>
+        <select id="drawDays">
+            <option value="1">1 Day ($1)</option>
+            <option value="2">2 Days ($2)</option>
+            <option value="5">5 Days ($5)</option>
+            <option value="10">10 Days ($10)</option>
+        </select>
 
-    <h3 style="color:var(--neon); margin:0 0 10px 0;"> 10-DAY VAULT</h3>
-    <input type="text" id="drawNums" placeholder="Enter Winners (Ex: 12 16 21...)" oninput="render()">
-    <select id="drawDays">
-        <option value="1">1 Day Play ($1)</option>
-        <option value="3">3 Day Play ($3)</option>
-        <option value="10">10 Day Play ($10)</option>
-    </select>
-    <div id="vaultList"></div>
+        <button onclick="generateAI()"> GENERATE AI BARBELL PICKS</button>
+        <div id="aiPreview" style="margin-top:10px"></div>
+
+        <hr style="border:0; border-top:1px solid #222; margin:15px 0;">
+        
+        <input type="text" id="manualEntry" placeholder="Enter Own Numbers (Ex: 05 12 19 22 30)">
+        <button style="background:#333; color:white;" onclick="addManual()">SAVE MANUAL TICKET</button>
+    </div>
+
+    <div id="historyTab" style="display:none">
+        <p style="font-size:11px; color:#888;">Paste up to 200 past draws here (one per line):</p>
+        <textarea id="historyInput" rows="10" placeholder="07 11 14 33 37&#10;12 16 21 29 39" oninput="saveHistory()"></textarea>
+        <div id="historyLog"></div>
+    </div>
+
+    <div id="vaultTab" style="display:none">
+        <input type="text" id="checkWinners" placeholder="Enter Tonight's Winners" oninput="renderVault()">
+        <div id="vaultList"></div>
+    </div>
 </div>
 
 <script>
-    // Safeguard against null data
-    let vault = JSON.parse(localStorage.getItem('f5_v22_vault') || "[]");
-    let stats = JSON.parse(localStorage.getItem('f5_v22_stats') || '{"spent":0, "won":0}');
+    let vault = JSON.parse(localStorage.getItem('f5_v25_vault') || "[]");
+    let stats = JSON.parse(localStorage.getItem('f5_v25_stats') || '{"spent":0, "won":0}');
+    let history = localStorage.getItem('f5_v25_hist') || "";
 
-    function generate() {
-        const preview = document.getElementById('preview');
+    function showTab(tab) {
+        document.getElementById('playTab').style.display = tab === 'play' ? 'block' : 'none';
+        document.getElementById('historyTab').style.display = tab === 'history' ? 'block' : 'none';
+        document.getElementById('vaultTab').style.display = tab === 'vault' ? 'block' : 'none';
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        if(tab === 'vault') renderVault();
+    }
+
+    function saveHistory() {
+        history = document.getElementById('historyInput').value;
+        localStorage.setItem('f5_v25_hist', history);
+    }
+
+    function getHotCold() {
+        let counts = {};
+        let lines = history.split('\n').filter(l => l.trim() !== "").slice(0, 200);
+        lines.forEach(l => {
+            let nums = l.split(/\s+/).map(Number);
+            nums.forEach(n => counts[n] = (counts[n] || 0) + 1);
+        });
+        let sorted = Object.keys(counts).sort((a,b) => counts[b] - counts[a]);
+        return { 
+            hot: sorted.slice(0, 15).map(Number), 
+            cold: Array.from({length:41}, (_,i)=>i+1).filter(n => !sorted.slice(0,15).includes(n.toString()))
+        };
+    }
+
+    function generateAI() {
+        const {hot, cold} = getHotCold();
+        const preview = document.getElementById('aiPreview');
         preview.innerHTML = '';
         
-        // Barbell Strategy: Hot vs. Cold weighting
-        const hot = [12, 16, 21, 29, 39, 3, 7, 10, 8, 20, 28, 38];
-        const all = Array.from({length: 41}, (_, i) => i + 1);
-        const cold = all.filter(n => !hot.includes(n));
-
         for(let i=0; i<4; i++) {
+            let pool = (i < 2 && hot.length > 5) ? hot : cold;
             let nums = [];
-            let isTrend = i < 2;
-            let pool = isTrend ? hot : cold;
-            
             while(nums.length < 5) {
-                let n = pool[Math.floor(Math.random() * pool.length)]; // Random integer generation
+                let n = pool[Math.floor(Math.random()*pool.length)];
                 if(!nums.includes(n)) nums.push(n);
             }
-            nums.sort((a,b) => a-b);
-            
-            preview.innerHTML += `
-                <div style="background:#1a1a1a; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid ${isTrend?'var(--neon)':'var(--gold)'};">
-                    <span class="strat-label" style="background:${isTrend?'var(--neon)':'var(--gold)'}">${isTrend?' TREND':' TRAP'}</span>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="font-size:18px; font-weight:bold;">${nums.map(n => n<10?'0'+n:n).join(' ')}</span>
-                        <button style="background:none; border:1px solid var(--neon); color:var(--neon); padding:5px 10px; border-radius:8px; font-size:10px;" onclick="add('${nums.join(' ')}')">ADD</button>
-                    </div>
-                </div>`;
+            nums.sort((a,b)=>a-b);
+            preview.innerHTML += `<div style="padding:10px; background:#1a1a1a; margin-bottom:5px; border-radius:8px; display:flex; justify-content:space-between;">
+                <span>${nums.join(' ')}</span>
+                <button style="width:auto; padding:5px 10px; font-size:10px;" onclick="saveTicket('${nums.join(' ')}')">ADD</button>
+            </div>`;
         }
     }
 
-    function add(numStr) {
-        const days = parseInt(document.getElementById('drawDays').value);
-        const arr = numStr.split(' ').map(Number);
-        vault.unshift({ nums: arr, days: days, date: new Date().toLocaleDateString(), prize: 0 });
-        stats.spent += days;
-        save();
+    function addManual() {
+        const val = document.getElementById('manualEntry').value;
+        if(val) { saveTicket(val); document.getElementById('manualEntry').value = ''; }
     }
 
-    function render() {
-        // Fix NaN issues by cleaning input strings into numbers
-        const winVal = document.getElementById('drawNums').value.split(/\s+/).filter(n => n !== "").map(Number);
+    function saveTicket(numStr) {
+        const days = parseInt(document.getElementById('drawDays').value);
+        const arr = numStr.trim().split(/\s+/).map(Number);
+        vault.unshift({ nums: arr, days: days, date: new Date().toLocaleDateString(), won: 0 });
+        stats.spent += days;
+        updateStorage();
+        alert("Ticket Saved!");
+    }
+
+    function renderVault() {
+        const winners = document.getElementById('checkWinners').value.split(/\s+/).map(Number);
         const list = document.getElementById('vaultList');
         list.innerHTML = '';
-
         vault.forEach((t, i) => {
-            let matches = t.nums.filter(n => winVal.includes(n)).length;
-            let numHTML = t.nums.map(n => {
-                const match = winVal.includes(n);
-                return `<span class="${match ? 'match-num' : ''}">${n < 10 ? '0'+n : n}</span>`;
-            }).join(' ');
-
-            list.innerHTML += `
-                <div class="ticket ${matches >= 2 ? 'match-win' : ''}">
-                    <div style="font-size:20px; font-weight:bold;">${numHTML}</div>
-                    <div style="font-size:11px; color:#666; margin-top:8px;">Matches: ${matches} | ${t.days} Days | Won: $${t.prize}</div>
-                    <button class="log-btn" onclick="logWin(${i})">LOG CASH WIN</button>
-                    <div style="text-align:right; margin-top:-15px; color:#444; font-size:10px;" onclick="del(${i})">× Remove</div>
-                </div>`;
+            let matches = t.nums.filter(n => winners.includes(n)).length;
+            list.innerHTML += `<div class="ticket ${matches >= 2 ? 'match-win' : ''}">
+                <b>${t.nums.map(n => winners.includes(n) ? `<span class="match-num">${n}</span>` : n).join(' ')}</b>
+                <div style="font-size:10px; color:#777; margin-top:5px;">Matches: ${matches} | Play: ${t.days} Days</div>
+                <button style="background:var(--gold); padding:5px; margin-top:5px; font-size:10px;" onclick="logWin(${i})">LOG WIN ($${t.won})</button>
+            </div>`;
         });
         document.getElementById('spentDisp').innerText = `$${stats.spent}`;
         document.getElementById('wonDisp').innerText = `$${stats.won}`;
     }
 
     function logWin(i) {
-        let p = prompt("Cash amount?");
-        if(p && !isNaN(p)) { stats.won += parseInt(p); vault[i].prize += parseInt(p); save(); }
+        let p = prompt("Winnings?");
+        if(p) { stats.won += parseInt(p); vault[i].won += parseInt(p); updateStorage(); renderVault(); }
     }
 
-    function del(i) { if(confirm("Del?")) { vault.splice(i,1); save(); } }
-    function save() {
-        localStorage.setItem('f5_v22_vault', JSON.stringify(vault));
-        localStorage.setItem('f5_v22_stats', JSON.stringify(stats));
-        render();
+    function updateStorage() {
+        localStorage.setItem('f5_v25_vault', JSON.stringify(vault));
+        localStorage.setItem('f5_v25_stats', JSON.stringify(stats));
     }
-    window.onload = render;
+
+    window.onload = () => {
+        document.getElementById('historyInput').value = history;
+        document.getElementById('spentDisp').innerText = `$${stats.spent}`;
+        document.getElementById('wonDisp').innerText = `$${stats.won}`;
+    };
 </script>
 </body>
 </html>
