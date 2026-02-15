@@ -6,25 +6,86 @@
     <title>F5 Pro Master 2.2</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #0a0a0a; }
-        body { font-family: sans-serif; background: var(--bg); color: white; padding: 15px; margin: 0; }
-        .card { background: #111; padding: 20px; border-radius: 24px; border: 1px solid #222; max-width: 450px; margin: auto; }
+        :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #0a0a0a; --card-bg: #111; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; padding: 15px; margin: 0; }
+        .card { background: var(--card-bg); padding: 20px; border-radius: 24px; border: 1px solid #222; max-width: 450px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stats { display: flex; gap: 10px; margin-bottom: 20px; }
         .stat-box { flex: 1; background: #1a1a1a; padding: 15px; border-radius: 16px; text-align: center; border: 1px solid #333; }
+        .stat-val { font-size: 24px; font-weight: 900; display: block; }
+        
+        /* Generator UI */
+        .gen-section { border: 1px solid #333; border-radius: 16px; padding: 15px; margin-bottom: 20px; background: #0c0c0c; }
+        .strat-btn { background: var(--neon); color: black; border: none; padding: 18px; border-radius: 16px; font-weight: 900; width: 100%; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+        .strat-btn:active { transform: scale(0.98); }
+        
+        /* Ticket Display */
         input, select { background: #1a1a1a; border: 1px solid #333; color: white; padding: 14px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 16px; }
-        button { background: var(--neon); color: black; border: none; padding: 18px; border-radius: 16px; font-weight: 900; width: 100%; cursor: pointer; margin-bottom: 10px; }
         .ticket { background: #161616; padding: 18px; border-radius: 16px; margin-top: 12px; border-left: 6px solid #333; position: relative; }
-        .match-win { border-left-color: var(--neon); background: #00221a; }
+        .match-win { border-left-color: var(--neon); background: linear-gradient(90deg, #00221a 0%, #161616 100%); }
         .match-num { color: var(--neon); font-weight: 900; text-decoration: underline; }
-        .strategy-tag { font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; display: inline-block; }
+        .strategy-tag { font-size: 10px; font-weight: bold; padding: 3px 8px; border-radius: 6px; margin-bottom: 8px; display: inline-block; text-transform: uppercase; }
+        .log-btn { background: var(--gold); border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; font-size: 12px; cursor: pointer; }
+        .del-x { position: absolute; right: 15px; top: 15px; color: #444; font-size: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div class="stats">
-        <div class="stat-box"><small>TOTAL SPENT</small><br><span id="spentDisplay" style="font-size:22px; font-weight:900;">$0</span></div>
-        <div class="stat-box"><small>TOTAL WON</small><br><span id="wonDisplay" style="font-size:22px; font-weight:900; color:var(--gold);">$0</span></div>
+        <div class="stat-box"><small style="color:#666">SPENT</small><span class="stat-val" id="spentDisplay">$0</span></div>
+        <div class="stat-box"><small style="color:#666">WON</small><span class="stat-val" id="wonDisplay" style="color:var(--gold)">$0</span></div>
     </div>
 
-    <h3 style="color:
+    <div class="gen-section">
+        <h3 style="color:var(--neon); margin: 0 0 10px 0; font-size: 16px;">🤖 AI BARBELL PREDICTOR</h3>
+        <p style="font-size: 11px; color: #888; margin-bottom: 15px;">Targets recent hot numbers vs. overdue long-shots.</p>
+        <button class="strat-btn" onclick="generateNeural()">Generate AI Picks</button>
+        <div id="aiPreview" style="margin-top: 15px;"></div>
+    </div>
+
+    <h3 style="color:var(--neon); margin: 25px 0 10px 0; font-size: 16px;">📂 10-DAY TICKET VAULT</h3>
+    <input type="text" id="winDraw" placeholder="Tonight's Draw (Ex: 12 16 21...)" oninput="render()">
+    
+    <div style="display: flex; gap: 8px;">
+        <input type="text" id="manualNum" placeholder="Manual Entry..." style="flex: 2;">
+        <select id="duration" style="flex: 1;">
+            <option value="1">1 Day</option>
+            <option value="3">3 Days</option>
+            <option value="10">10 Days</option>
+        </select>
+    </div>
+    <button onclick="addManual()" style="background: #222; color: white; border: 1px solid #444; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; margin-bottom: 20px;">Save Ticket to Vault</button>
+
+    <div id="list"></div>
+</div>
+
+<script>
+    let vault = JSON.parse(localStorage.getItem('f5_v22_vault') || "[]");
+    let stats = JSON.parse(localStorage.getItem('f5_v22_stats') || '{"spent":0, "won":0}');
+
+    // Register Service Worker for offline use
+    if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+
+    function generateNeural() {
+        const preview = document.getElementById('aiPreview');
+        preview.innerHTML = '';
+        
+        // Strategy pools based on current Arizona trends
+        const hotPool = [12, 16, 21, 29, 39, 3, 7, 10, 8, 20, 28, 38];
+        const fullRange = Array.from({length: 41}, (_, i) => i + 1);
+        const longShotPool = fullRange.filter(n => !hotPool.includes(n));
+
+        for(let i=0; i<4; i++) {
+            let nums = [];
+            let strat = (i < 2) ? "🔥 TREND" : "🏹 TRAP";
+            let color = (i < 2) ? "var(--neon)" : "var(--gold)";
+            
+            while(nums.length < 5) {
+                let pool = (strat === "🔥 TREND") ? hotPool : longShotPool;
+                let n = pool[Math.floor(Math.random() * pool.length)];
+                if(!nums.includes(n)) nums.push(n);
+            }
+            nums.sort((a,b) => a-b);
+            
+            preview.innerHTML += `
+                <div
