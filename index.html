@@ -7,48 +7,43 @@
     <style>
         :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #0a0a0a; }
         body { font-family: sans-serif; background: var(--bg); color: white; padding: 15px; margin: 0; }
-        .card { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; max-width: 450px; margin: auto; }
+        .card { background: #111; padding: 20px; border-radius: 20px; border: 1px solid #222; max-width: 450px; margin: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .stat-box { background: #1a1a1a; padding: 15px; border-radius: 12px; text-align: center; border: 1px solid #333; }
-        
-        /* Generator Buttons */
-        .btn-gen { background: var(--neon); color: black; border: none; padding: 20px; border-radius: 15px; font-weight: 900; width: 100%; cursor: pointer; font-size: 16px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,255,204,0.3); }
-        .btn-add { background: #222; color: var(--neon); border: 1px solid var(--neon); padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; }
-        
-        /* Ticket Display */
+        .btn-gen { background: var(--neon); color: black; border: none; padding: 18px; border-radius: 15px; font-weight: 900; width: 100%; cursor: pointer; font-size: 16px; margin-bottom: 15px; }
         input, select { background: #1a1a1a; border: 1px solid #333; color: white; padding: 15px; border-radius: 12px; width: 100%; box-sizing: border-box; margin-bottom: 10px; font-size: 16px; }
-        .ticket { background: #161616; padding: 18px; border-radius: 15px; margin-top: 10px; border-left: 5px solid #333; }
+        .ticket { background: #161616; padding: 18px; border-radius: 15px; margin-top: 10px; border-left: 5px solid #333; position: relative; }
         .match-win { border-left-color: var(--neon); background: #001a14; }
         .match-num { color: var(--neon); font-weight: 900; text-decoration: underline; }
         .strat-label { font-size: 10px; font-weight: bold; color: black; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
-        .log-btn { background: var(--gold); border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; }
+        .log-btn { background: var(--gold); border: none; padding: 10px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <div class="stats-grid">
-        <div class="stat-box"><small>SPENT</small><br><b id="spentDisp" style="font-size:22px">$0</b></div>
-        <div class="stat-box"><small>WON</small><br><b id="wonDisp" style="font-size:22px; color:var(--gold)">$0</b></div>
+        <div class="stat-box"><small style="color:#666">SPENT</small><br><b id="spentDisp" style="font-size:22px">$0</b></div>
+        <div class="stat-box"><small style="color:#666">WON</small><br><b id="wonDisp" style="font-size:22px; color:var(--gold)">$0</b></div>
     </div>
 
-    <button class="btn-gen" onclick="generate()">⚡ GENERATE AI PICKS</button>
+    <button class="btn-gen" onclick="generate()"> GENERATE BARBELL PICKS</button>
     <div id="preview"></div>
 
     <hr style="border:0; border-top:1px solid #222; margin:20px 0;">
 
-    <h3 style="color:var(--neon); margin:0 0 10px 0;">📂 TRACKER VAULT</h3>
-    <input type="text" id="drawNums" placeholder="Tonight's Winners (Ex: 12 16 21...)" oninput="render()">
+    <h3 style="color:var(--neon); margin:0 0 10px 0;"> 10-DAY VAULT</h3>
+    <input type="text" id="drawNums" placeholder="Enter Winners (Ex: 12 16 21...)" oninput="render()">
     <select id="drawDays">
-        <option value="1">1 Day ($1)</option>
-        <option value="3">3 Days ($3)</option>
-        <option value="10">10 Days ($10)</option>
+        <option value="1">1 Day Play ($1)</option>
+        <option value="3">3 Day Play ($3)</option>
+        <option value="10">10 Day Play ($10)</option>
     </select>
     <div id="vaultList"></div>
 </div>
 
 <script>
-    // Load data or start fresh
+    // Safeguard against null data
     let vault = JSON.parse(localStorage.getItem('f5_v22_vault') || "[]");
     let stats = JSON.parse(localStorage.getItem('f5_v22_stats') || '{"spent":0, "won":0}');
 
@@ -56,7 +51,7 @@
         const preview = document.getElementById('preview');
         preview.innerHTML = '';
         
-        // Barbell Strategy: Hot vs. Cold numbers
+        // Barbell Strategy: Hot vs. Cold weighting
         const hot = [12, 16, 21, 29, 39, 3, 7, 10, 8, 20, 28, 38];
         const all = Array.from({length: 41}, (_, i) => i + 1);
         const cold = all.filter(n => !hot.includes(n));
@@ -67,17 +62,17 @@
             let pool = isTrend ? hot : cold;
             
             while(nums.length < 5) {
-                let n = pool[Math.floor(Math.random() * pool.length)];
+                let n = pool[Math.floor(Math.random() * pool.length)]; // Random integer generation
                 if(!nums.includes(n)) nums.push(n);
             }
             nums.sort((a,b) => a-b);
             
             preview.innerHTML += `
                 <div style="background:#1a1a1a; padding:12px; border-radius:12px; margin-bottom:8px; border:1px solid ${isTrend?'var(--neon)':'var(--gold)'};">
-                    <span class="strat-label" style="background:${isTrend?'var(--neon)':'var(--gold)'}">${isTrend?'TREND':'TRAP'}</span>
+                    <span class="strat-label" style="background:${isTrend?'var(--neon)':'var(--gold)'}">${isTrend?' TREND':' TRAP'}</span>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <span style="font-size:18px; font-weight:bold;">${nums.map(n => n<10?'0'+n:n).join(' ')}</span>
-                        <button class="btn-add" onclick="add('${nums.join(' ')}')">ADD</button>
+                        <button style="background:none; border:1px solid var(--neon); color:var(--neon); padding:5px 10px; border-radius:8px; font-size:10px;" onclick="add('${nums.join(' ')}')">ADD</button>
                     </div>
                 </div>`;
         }
@@ -92,6 +87,7 @@
     }
 
     function render() {
+        // Fix NaN issues by cleaning input strings into numbers
         const winVal = document.getElementById('drawNums').value.split(/\s+/).filter(n => n !== "").map(Number);
         const list = document.getElementById('vaultList');
         list.innerHTML = '';
@@ -106,9 +102,9 @@
             list.innerHTML += `
                 <div class="ticket ${matches >= 2 ? 'match-win' : ''}">
                     <div style="font-size:20px; font-weight:bold;">${numHTML}</div>
-                    <div style="font-size:11px; color:#666; margin-top:8px;">Matches: ${matches} | ${t.days} Day Play | Win: $${t.prize}</div>
+                    <div style="font-size:11px; color:#666; margin-top:8px;">Matches: ${matches} | ${t.days} Days | Won: $${t.prize}</div>
                     <button class="log-btn" onclick="logWin(${i})">LOG CASH WIN</button>
-                    <div style="text-align:right; margin-top:-15px; color:#444;" onclick="del(${i})">× Remove</div>
+                    <div style="text-align:right; margin-top:-15px; color:#444; font-size:10px;" onclick="del(${i})">� Remove</div>
                 </div>`;
         });
         document.getElementById('spentDisp').innerText = `$${stats.spent}`;
@@ -117,7 +113,7 @@
 
     function logWin(i) {
         let p = prompt("Cash amount?");
-        if(p) { stats.won += parseInt(p); vault[i].prize += parseInt(p); save(); }
+        if(p && !isNaN(p)) { stats.won += parseInt(p); vault[i].prize += parseInt(p); save(); }
     }
 
     function del(i) { if(confirm("Del?")) { vault.splice(i,1); save(); } }
