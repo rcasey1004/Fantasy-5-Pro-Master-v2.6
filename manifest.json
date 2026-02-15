@@ -1,19 +1,14 @@
 {
-  "name": "Pick 3 Pro AI",
-  "short_name": "P3 Pro",
+  "name": "F5 Pro v2.2",
+  "short_name": "F5 Pro",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#ffcc00",
+  "background_color": "#0a0a0a",
+  "theme_color": "#00ffcc",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/GoogleChrome/lighthouse/master/lighthouse-core/scripts/images/pwa-512.png",
       "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/GoogleChrome/lighthouse/master/lighthouse-core/scripts/images/pwa-512.png",
-      "sizes": "512x512",
       "type": "image/png"
     }
   ]
