@@ -1,10 +1,7 @@
-const CACHE_NAME = 'f5-pro-v2.2';
-const ASSETS = ['./index.html', './manifest.json'];
-
+const CACHE = 'f5-v2';
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./index.html', './manifest.json'])));
 });
-
 self.addEventListener('fetch', (e) => {
   e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
