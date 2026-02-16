@@ -3,62 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>F5 Pro: Data Auditor</title>
+    <title>F5 Pro: Full Data Auditor</title>
     <style>
         body { font-family: sans-serif; background: #0a0a0a; color: white; padding: 20px; }
         .box { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #222; max-width: 500px; margin: auto; }
         .stat { font-size: 24px; font-weight: bold; color: #00ffcc; margin-bottom: 10px; }
         button { background: #00ffcc; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        pre { background: #000; padding: 10px; border-radius: 8px; font-size: 12px; overflow-x: auto; color: #888; border: 1px solid #333; }
+        pre { background: #000; padding: 10px; border-radius: 8px; font-size: 11px; overflow-x: auto; color: #888; border: 1px solid #333; max-height: 200px; }
+        h3 { color: #ffcc00; margin-top: 25px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>📊 Data Auditor</h2>
-    <div id="stats">
-        <div class="stat" id="roi">ROI: 0%</div>
-        <p id="totalLines">History Entries: 0</p>
-    </div>
+    <h2> Full Data Auditor</h2>
+    <div id="roi" class="stat">ROI: 0%</div>
     
-    <hr style="border:0; border-top:1px solid #222;">
+    <h3> Draw History (Last 200)</h3>
+    <pre id="histPreview">No history found...</pre>
     
-    <h3>💾 Backup History</h3>
-    <p style="font-size:12px; color:#666;">Downloads your 200-draw list as a .txt file.</p>
-    <button onclick="downloadHistory()">DOWNLOAD HISTORY.TXT</button>
+    <h3> Active Vault Tickets</h3>
+    <pre id="ticketPreview">No tickets found...</pre>
+
+    <hr style="border:0; border-top:1px solid #222; margin: 20px 0;">
     
-    <h3>📋 Raw Vault Data</h3>
-    <pre id="rawPreview">No data found...</pre>
+    <button onclick="downloadAll()"> DOWNLOAD FULL BACKUP (.TXT)</button>
 </div>
 
 <script>
-    // Link to the exact same storage keys used in v2.6
-    const histData = localStorage.getItem('f5_v26_hist') || "";
-    const statsData = JSON.parse(localStorage.getItem('f5_v26_stats') || '{"spent":0, "won":0}');
+    // Pulling the exact keys from v2.6
+    const history = localStorage.getItem('f5_v26_hist') || "";
+    const vault = localStorage.getItem('f5_v26_vault') || "[]";
+    const stats = JSON.parse(localStorage.getItem('f5_v26_stats') || '{"spent":0, "won":0}');
 
     function init() {
-        // Calculate ROI
-        if (statsData.spent > 0) {
-            let roi = (statsData.won / statsData.spent) * 100;
-            document.getElementById('roi').innerText = `ROI: ${roi.toFixed(1)}%`;
+        // Stats Calculation
+        if (stats.spent > 0) {
+            let roi = (stats.won / stats.spent) * 100;
+            document.getElementById('roi').innerText = `ROI: ${roi.toFixed(1)}% ($${stats.won} won / $${stats.spent} spent)`;
         }
         
-        let lines = histData.split('\n').filter(l => l.trim() !== "").length;
-        document.getElementById('totalLines').innerText = `History Entries: ${lines} / 200`;
-        document.getElementById('rawPreview').innerText = histData || "History is currently empty.";
+        // Previews
+        document.getElementById('histPreview').innerText = history || "Empty";
+        
+        const tickets = JSON.parse(vault);
+        document.getElementById('ticketPreview').innerText = tickets.length > 0 
+            ? tickets.map(t => `${t.nums.join(' ')} (${t.days} days left)`).join('\n')
+            : "No active tickets in vault.";
     }
 
-    function downloadHistory() {
-        if(!histData) return alert("Nothing to back up!");
-        const blob = new Blob([histData], { type: 'text/plain' });
+    function downloadAll() {
+        const timestamp = new Date().toLocaleString();
+        const content = `F5 PRO MASTER BACKUP - ${timestamp}\n\n` +
+                        `--- STATS ---\nSpent: $${stats.spent}\nWon: $${stats.won}\n\n` +
+                        `--- ACTIVE TICKETS ---\n${document.getElementById('ticketPreview').innerText}\n\n` +
+                        `--- DRAW HISTORY ---\n${history}`;
+        
+        const blob = new Blob([content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `F5_History_Backup_${new Date().toLocaleDateString()}.txt`;
+        a.download = `F5_Full_Backup_${new Date().toLocaleDateString()}.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
     }
 
     window.onload = init;
