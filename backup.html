@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F5 Pro: Data Auditor</title>
+    <style>
+        body { font-family: sans-serif; background: #0a0a0a; color: white; padding: 20px; }
+        .box { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #222; max-width: 500px; margin: auto; }
+        .stat { font-size: 24px; font-weight: bold; color: #00ffcc; margin-bottom: 10px; }
+        button { background: #00ffcc; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        pre { background: #000; padding: 10px; border-radius: 8px; font-size: 12px; overflow-x: auto; color: #888; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>📊 Data Auditor</h2>
+    <div id="stats">
+        <div class="stat" id="roi">ROI: 0%</div>
+        <p id="totalLines">History Entries: 0</p>
+    </div>
+    
+    <hr style="border:0; border-top:1px solid #222;">
+    
+    <h3>💾 Backup History</h3>
+    <p style="font-size:12px; color:#666;">Downloads your 200-draw list as a .txt file.</p>
+    <button onclick="downloadHistory()">DOWNLOAD HISTORY.TXT</button>
+    
+    <h3>📋 Raw Vault Data</h3>
+    <pre id="rawPreview">No data found...</pre>
+</div>
+
+<script>
+    // Link to the exact same storage keys used in v2.6
+    const histData = localStorage.getItem('f5_v26_hist') || "";
+    const statsData = JSON.parse(localStorage.getItem('f5_v26_stats') || '{"spent":0, "won":0}');
+
+    function init() {
+        // Calculate ROI
+        if (statsData.spent > 0) {
+            let roi = (statsData.won / statsData.spent) * 100;
+            document.getElementById('roi').innerText = `ROI: ${roi.toFixed(1)}%`;
+        }
+        
+        let lines = histData.split('\n').filter(l => l.trim() !== "").length;
+        document.getElementById('totalLines').innerText = `History Entries: ${lines} / 200`;
+        document.getElementById('rawPreview').innerText = histData || "History is currently empty.";
+    }
+
+    function downloadHistory() {
+        if(!histData) return alert("Nothing to back up!");
+        const blob = new Blob([histData], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `F5_History_Backup_${new Date().toLocaleDateString()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
