@@ -3,70 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>F5 Pro: Full Data Auditor</title>
+    <title>F5 Pro: Data Auditor & Restore</title>
     <style>
         body { font-family: sans-serif; background: #0a0a0a; color: white; padding: 20px; }
         .box { background: #111; padding: 20px; border-radius: 15px; border: 1px solid #222; max-width: 500px; margin: auto; }
         .stat { font-size: 24px; font-weight: bold; color: #00ffcc; margin-bottom: 10px; }
         button { background: #00ffcc; color: black; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        pre { background: #000; padding: 10px; border-radius: 8px; font-size: 11px; overflow-x: auto; color: #888; border: 1px solid #333; max-height: 200px; }
-        h3 { color: #ffcc00; margin-top: 25px; }
+        textarea { background: #000; color: #00ffcc; border: 1px solid #333; width: 100%; box-sizing: border-box; padding: 10px; border-radius: 8px; margin-top: 10px; font-family: monospace; }
+        h3 { color: #ffcc00; margin-top: 25px; margin-bottom: 5px; }
+        pre { background: #000; padding: 10px; border-radius: 8px; font-size: 11px; overflow-x: auto; color: #888; border: 1px solid #333; max-height: 150px; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2> Full Data Auditor</h2>
+    <h2> Data Auditor</h2>
     <div id="roi" class="stat">ROI: 0%</div>
     
-    <h3> Draw History (Last 200)</h3>
-    <pre id="histPreview">No history found...</pre>
-    
-    <h3> Active Vault Tickets</h3>
-    <pre id="ticketPreview">No tickets found...</pre>
+    <button onclick="downloadAll()"> DOWNLOAD BACKUP.TXT</button>
 
-    <hr style="border:0; border-top:1px solid #222; margin: 20px 0;">
-    
-    <button onclick="downloadAll()"> DOWNLOAD FULL BACKUP (.TXT)</button>
+    <hr style="border:0; border-top:1px solid #222; margin: 25px 0;">
+
+    <h3> Emergency Restore</h3>
+    <p style="font-size:11px; color:#888;">If your app is empty, paste your 200-draw history below and hit Restore.</p>
+    <textarea id="restoreBox" rows="8" placeholder="Paste your 200 numbers here..."></textarea>
+    <button style="background:#ff4444; color:white;" onclick="restoreData()"> RESTORE HISTORY TO APP</button>
 </div>
 
 <script>
-    // Pulling the exact keys from v2.6
-    const history = localStorage.getItem('f5_v26_hist') || "";
-    const vault = localStorage.getItem('f5_v26_vault') || "[]";
-    const stats = JSON.parse(localStorage.getItem('f5_v26_stats') || '{"spent":0, "won":0}');
+    const STATS_KEY = 'f5_v26_stats';
+    const HIST_KEY = 'f5_v26_hist';
 
     function init() {
-        // Stats Calculation
+        const stats = JSON.parse(localStorage.getItem(STATS_KEY) || '{"spent":0, "won":0}');
         if (stats.spent > 0) {
             let roi = (stats.won / stats.spent) * 100;
-            document.getElementById('roi').innerText = `ROI: ${roi.toFixed(1)}% ($${stats.won} won / $${stats.spent} spent)`;
+            document.getElementById('roi').innerText = `ROI: ${roi.toFixed(1)}%`;
         }
-        
-        // Previews
-        document.getElementById('histPreview').innerText = history || "Empty";
-        
-        const tickets = JSON.parse(vault);
-        document.getElementById('ticketPreview').innerText = tickets.length > 0 
-            ? tickets.map(t => `${t.nums.join(' ')} (${t.days} days left)`).join('\n')
-            : "No active tickets in vault.";
     }
 
     function downloadAll() {
-        const timestamp = new Date().toLocaleString();
-        const content = `F5 PRO MASTER BACKUP - ${timestamp}\n\n` +
-                        `--- STATS ---\nSpent: $${stats.spent}\nWon: $${stats.won}\n\n` +
-                        `--- ACTIVE TICKETS ---\n${document.getElementById('ticketPreview').innerText}\n\n` +
-                        `--- DRAW HISTORY ---\n${history}`;
-        
-        const blob = new Blob([content], { type: 'text/plain' });
+        const history = localStorage.getItem(HIST_KEY) || "";
+        const blob = new Blob([history], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `F5_Full_Backup_${new Date().toLocaleDateString()}.txt`;
+        a.download = `F5_History_Backup.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+    }
+
+    function restoreData() {
+        const data = document.getElementById('restoreBox').value.trim();
+        if(!data) return alert("Please paste your history first!");
+        
+        if(confirm("This will overwrite your current app history. Proceed?")) {
+            // Write to the exact same memory key the main app uses
+            localStorage.setItem(HIST_KEY, data);
+            alert(" History Restored! Open your F5 Pro Master app to see the changes.");
+            location.reload();
+        }
     }
 
     window.onload = init;
